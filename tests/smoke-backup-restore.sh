@@ -39,20 +39,16 @@ esac
 user_id=$(query "select id from auth.users where email = '$email'")
 [ -n "$user_id" ] || { echo "Fixture user was not created" >&2; exit 1; }
 
-docker run --rm \
-    -v "$ROOT/volumes/storage:/target:z" \
-    "$HELPER_IMAGE" \
-    sh -c "printf 'restore fixture' > /target/$sentinel"
+docker compose run --rm --no-deps --entrypoint sh storage \
+    -c "printf 'restore fixture' > /var/lib/storage/$sentinel"
 
 backup_output=$(./nuvio backup)
 backup_dir=$(printf '%s\n' "$backup_output" | sed -n 's/^Backup written to //p' | tail -n 1)
 [ -d "$backup_dir" ] || { echo "Backup directory was not created" >&2; exit 1; }
 
 query "delete from auth.users where id = '$user_id'" >/dev/null
-docker run --rm \
-    -v "$ROOT/volumes/storage:/target:z" \
-    "$HELPER_IMAGE" \
-    rm -f "/target/$sentinel"
+docker compose run --rm --no-deps --entrypoint rm storage \
+    -f "/var/lib/storage/$sentinel"
 
 [ "$(query "select count(*) from auth.users where id = '$user_id'")" = "0" ] || {
     echo "Fixture user was not deleted before restore" >&2
@@ -71,19 +67,15 @@ docker run --rm \
     exit 1
 }
 
-sentinel_value=$(docker run --rm \
-    -v "$ROOT/volumes/storage:/target:ro,z" \
-    "$HELPER_IMAGE" \
-    cat "/target/$sentinel")
+sentinel_value=$(docker compose run --rm --no-deps --entrypoint cat storage \
+    "/var/lib/storage/$sentinel")
 [ "$sentinel_value" = "restore fixture" ] || {
     echo "Storage sentinel was not restored" >&2
     exit 1
 }
 
 query "delete from auth.users where id = '$user_id'" >/dev/null
-docker run --rm \
-    -v "$ROOT/volumes/storage:/target:z" \
-    "$HELPER_IMAGE" \
-    rm -f "/target/$sentinel"
+docker compose run --rm --no-deps --entrypoint rm storage \
+    -f "/var/lib/storage/$sentinel"
 
 echo "OK  database and Storage backup/restore"

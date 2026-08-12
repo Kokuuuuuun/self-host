@@ -5,7 +5,6 @@ set -eu
 ROOT=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 cd "$ROOT"
 
-BACKUP_HELPER_IMAGE="alpine:3.22.1"
 
 die() {
     echo "Error: $*" >&2
@@ -410,7 +409,7 @@ setup() {
         set_env IMPORT_ACCOUNT_AFTER_UP false
     fi
 
-    mkdir -p volumes/db/data volumes/storage backups
+    mkdir -p volumes/db/data backups
     chmod 700 volumes/db/data
     docker compose config --quiet
 
@@ -576,7 +575,8 @@ seed_avatar_assets() {
             continue
         fi
 
-        curl -fsS -o /dev/null \
+        avatar_response=$(mktemp)
+        if ! curl --fail-with-body -sS -o "$avatar_response" \
             -X POST \
             -H "apikey: $service_role_key" \
             -H "Authorization: Bearer $service_role_key" \
@@ -584,7 +584,17 @@ seed_avatar_assets() {
             -H "Cache-Control: public, max-age=31536000, immutable" \
             -H "x-upsert: true" \
             --data-binary "@$asset" \
-            "$storage_url/avatars/$object_name"
+            "$storage_url/avatars/$object_name"; then
+            echo "ERROR: failed to upload avatar asset: $object_name" >&2
+            if [ -s "$avatar_response" ]; then
+                echo "Storage API response:" >&2
+                cat "$avatar_response" >&2
+                echo >&2
+            fi
+            rm -f "$avatar_response"
+            return 1
+        fi
+        rm -f "$avatar_response"
         uploaded_count=$((uploaded_count + 1))
     done
 
@@ -681,13 +691,13 @@ create_backup() {
 
     host_uid=$(id -u)
     host_gid=$(id -g)
-    docker run --rm \
+    docker compose run --rm --no-deps \
+        --entrypoint sh \
         -e HOST_UID="$host_uid" \
         -e HOST_GID="$host_gid" \
-        -v "$ROOT/volumes/storage:/source:ro,z" \
         -v "$target:/backup:z" \
-        "$BACKUP_HELPER_IMAGE" \
-        sh -c 'tar -czf /backup/storage.tar.gz -C /source . && chown "$HOST_UID:$HOST_GID" /backup/storage.tar.gz'
+        storage \
+        -c 'tar -czf /backup/storage.tar.gz -C /var/lib/storage . && chown "$HOST_UID:$HOST_GID" /backup/storage.tar.gz'
 
     git_commit=$(git rev-parse HEAD 2>/dev/null || printf 'unknown')
     migration_count=$(docker compose exec -T db psql -U supabase_admin -d "$db_name" -Atc "select count(*) from nuvio_migrations.schema_migrations")
@@ -801,11 +811,11 @@ SQL
         --exit-on-error \
         < "$backup_dir/database.dump"
 
-    docker run --rm \
-        -v "$ROOT/volumes/storage:/target:z" \
+    docker compose run --rm --no-deps \
+        --entrypoint sh \
         -v "$backup_dir:/backup:ro,z" \
-        "$BACKUP_HELPER_IMAGE" \
-        sh -c 'find /target -mindepth 1 -delete && tar -xzf /backup/storage.tar.gz -C /target'
+        storage \
+        -c 'find /var/lib/storage -mindepth 1 -delete && tar -xzf /backup/storage.tar.gz -C /var/lib/storage'
 
     docker compose up -d --wait
     migrate

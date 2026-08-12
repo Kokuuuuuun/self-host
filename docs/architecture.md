@@ -54,7 +54,7 @@ update so it does not run twice.
 ## Storage
 
 PostgreSQL stores file metadata, while the files themselves live under
-`volumes/storage/`. Nuvio creates the `avatars` and `covers` storage areas
+the Docker-managed `storage-data` volume. Nuvio creates the `avatars` and `covers` storage areas
 automatically. `./nuvio up` and `./nuvio migrate` keep the built-in avatar
 catalog complete without replacing uploaded files.
 

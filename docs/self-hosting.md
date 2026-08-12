@@ -197,7 +197,7 @@ Create a backup:
 ```
 
 Nuvio stores backups under `backups/`, database data under
-`volumes/db/data/`, uploaded files under `volumes/storage/`, and deployment
+`volumes/db/data/`, uploaded files in the Docker-managed `storage-data` volume, and deployment
 secrets in `.env`.
 
 Create a backup before updating. Then run:
