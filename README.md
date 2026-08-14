@@ -3,6 +3,12 @@
 Run Nuvio on your own server with Docker Compose. The deployment includes the
 backend, account dashboard, authentication, sync, and storage services.
 
+This project is for users who prefer to keep their Nuvio account, library, and
+synced data on infrastructure they control. The official Nuvio-hosted backend
+is `https://api.nuvio.tv`. Self-hosted deployments are intended for personal
+use. We do not recommend connecting to unofficial public backends operated by
+third parties, as Nuvio cannot verify or support those services.
+
 ## Deployment
 
 The recommended deployment uses HTTPS with a domain. Each client then has one
