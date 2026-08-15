@@ -606,9 +606,26 @@ check_services() {
     checked_dashboard_url=$1
     checked_backend_url=$2
     anon_key=$(env_value ANON_KEY)
+    expected_discovery_url=$(env_value SUPABASE_PUBLIC_URL)
+    expected_discovery_key=$anon_key
+    configured_publishable_key=$(env_value SUPABASE_PUBLISHABLE_KEY 2>/dev/null || true)
+    configured_secret_key=$(env_value SUPABASE_SECRET_KEY 2>/dev/null || true)
+
+    if [ -n "$configured_publishable_key" ] && [ -n "$configured_secret_key" ]; then
+        expected_discovery_key=$configured_publishable_key
+    fi
 
     curl -fsS -o /dev/null "$checked_dashboard_url/account/login"
     echo "OK  Account Dashboard"
+
+    if ! discovery_response=$(curl -fsS "${checked_backend_url%/}/.well-known/nuvio"); then
+        die "Backend discovery endpoint is unavailable"
+    fi
+    printf '%s' "$discovery_response" | grep -Fq '"version":1' || die "Backend discovery version is invalid"
+    printf '%s' "$discovery_response" | grep -Fq '"service":"nuvio"' || die "Backend discovery service is invalid"
+    printf '%s' "$discovery_response" | grep -Fq "\"backend_url\":\"$expected_discovery_url\"" || die "Backend discovery URL does not match SUPABASE_PUBLIC_URL"
+    printf '%s' "$discovery_response" | grep -Fq "\"publishable_key\":\"$expected_discovery_key\"" || die "Backend discovery publishable key is invalid"
+    echo "OK  Backend Discovery"
 
     curl -fsS -o /dev/null -H "apikey: $anon_key" "$checked_backend_url/auth/v1/health"
     echo "OK  Auth"
@@ -643,8 +660,10 @@ startup_doctor() {
 
 credentials() {
     require_env
+    backend_url=$(env_value SUPABASE_PUBLIC_URL)
     echo "Account dashboard:  $(account_dashboard_url)"
-    echo "Backend URL:       $(env_value SUPABASE_PUBLIC_URL)"
+    echo "Backend URL:       $backend_url"
+    echo "Discovery endpoint: ${backend_url%/}/.well-known/nuvio"
     echo "Publishable key:   $(env_value ANON_KEY)"
     if profile_enabled studio; then
         echo "Studio URL:        http://localhost:$(env_value KONG_HTTP_PORT)"
@@ -844,7 +863,7 @@ Commands:
   logs [SERVICE]                          Follow logs
   migrate                                 Apply migrations and seed assets
   configure                               Apply instance settings from .env
-  doctor                                  Check Dashboard, Auth, REST, Storage, and Functions
+  doctor                                  Check Discovery, Dashboard, Auth, REST, Storage, and Functions
   credentials                             Show dashboard, client, and Studio details
   import-account [--email EMAIL] [--yes]  Import an official Nuvio account
   backup                                  Back up database and local Storage

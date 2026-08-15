@@ -37,6 +37,10 @@ Once Nuvio starts, open `https://backend.example.com` for the account
 dashboard. Enter that same address as the Backend URL in Nuvio clients. Caddy
 handles HTTPS and sends dashboard and API requests to the correct services.
 
+Supported clients can use the discovery endpoint at
+`https://backend.example.com/.well-known/nuvio`. See
+[Connect Nuvio apps](docs/client-configuration.md) for details.
+
 ## Existing reverse proxy
 
 If Nginx, Caddy, Traefik, or a hosting panel already uses ports `80` and `443`,

@@ -18,6 +18,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
+      NUVIO_CADDY_CONFIG_VERSION: "discovery-v1"
       NUVIO_CADDY_ADDRESS: ${NUVIO_DOMAIN}
       NUVIO_DOMAIN: ${NUVIO_DOMAIN}
       ANON_KEY: ${ANON_KEY}

@@ -37,6 +37,27 @@ basicauth_credentials:
 ### API Routes
 ###
 services:
+  ## Public Nuvio backend discovery
+  - name: nuvio-discovery
+    _comment: 'Nuvio: /.well-known/nuvio -> public runtime client configuration'
+    # request-termination answers before Kong attempts to contact this target.
+    url: http://127.0.0.1:8001
+    routes:
+      - name: nuvio-discovery
+        strip_path: false
+        methods:
+          - GET
+          - OPTIONS
+        paths:
+          - /.well-known/nuvio
+    plugins:
+      - name: cors
+      - name: request-termination
+        config:
+          status_code: 200
+          content_type: application/json; charset=utf-8
+          body: '{"version":1,"service":"nuvio","self_hosted":true,"backend_url":"$SUPABASE_PUBLIC_URL","publishable_key":"$NUVIO_PUBLIC_API_KEY","capabilities":{"email_password_auth":true,"tv_login":true}}'
+
   ## Open Auth routes
   - name: auth-v1-open
     _comment: 'Auth: /auth/v1/verify* -> http://auth:9999/verify*'
