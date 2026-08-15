@@ -71,4 +71,6 @@ devices, trackers, and providers.
 
 Signed-in accounts can access their own account and synchronization data. The
 service role performs maintenance operations. Public endpoints expose service
-health, the avatar catalog, and TV sign-in.
+health, the avatar catalog, TV sign-in, and backend discovery. The discovery
+endpoint returns the public URL, publishable client key, and capability flags.
+It does not return administrative credentials.

@@ -23,7 +23,7 @@
 		}
 	}
 
-	@backend path /auth/v1 /auth/v1/* /rest/v1 /rest/v1/* /graphql/v1 /graphql/v1/* /realtime/v1 /realtime/v1/* /storage/v1 /storage/v1/* /functions/v1 /functions/v1/* /.well-known/oauth-authorization-server /sso/saml /sso/saml/* /api/mcp
+	@backend path /auth/v1 /auth/v1/* /rest/v1 /rest/v1/* /graphql/v1 /graphql/v1/* /realtime/v1 /realtime/v1/* /storage/v1 /storage/v1/* /functions/v1 /functions/v1/* /.well-known/nuvio /.well-known/oauth-authorization-server /sso/saml /sso/saml/* /api/mcp
 	handle @backend {
 		reverse_proxy kong:8000 {
 			header_up X-Forwarded-Proto https

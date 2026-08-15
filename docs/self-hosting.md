@@ -68,6 +68,11 @@ Publishable key:   <generated public key>
 
 Open the dashboard URL in a browser. Enter the Backend URL and publishable key
 in Nuvio clients. Keep administrative and service-role keys on the server.
+Supported clients can fetch these settings from the discovery endpoint:
+
+```sh
+curl https://backend.example.com/.well-known/nuvio
+```
 
 ## Use an existing reverse proxy
 
@@ -155,8 +160,9 @@ Use the two values printed by `./nuvio credentials`:
 - **Backend URL**
 - **Publishable key**
 
-Use the Backend URL exactly as printed. See
-[Connect Nuvio apps](client-configuration.md) for the client build settings.
+Use the Backend URL exactly as printed. Supported clients can fetch their
+connection settings from `<BACKEND_URL>/.well-known/nuvio`. See
+[Connect Nuvio apps](client-configuration.md) for manual build settings.
 
 ## Other setup options
 

@@ -1,12 +1,40 @@
 # Connect Nuvio apps
 
-## Build requirement
+## Discovery
 
-To connect a Nuvio client to a self-hosted server, build the client from source.
-Before building Nuvio TV, Mobile, Desktop, Web, Tizen, or webOS, add your
-deployment's Backend URL and Publishable key to the client source project. The
-build embeds both values. If either one changes, rebuild and reinstall the
-client.
+Self-hosted Nuvio servers publish their client settings at:
+
+```text
+<BACKEND_URL>/.well-known/nuvio
+```
+
+Supported clients use the Backend URL to request this document. It contains
+the backend URL, publishable key, and available features:
+
+```json
+{
+  "version": 1,
+  "service": "nuvio",
+  "self_hosted": true,
+  "backend_url": "https://backend.example.com",
+  "publishable_key": "<PUBLIC_CLIENT_KEY>",
+  "capabilities": {
+    "email_password_auth": true,
+    "tv_login": true
+  }
+}
+```
+
+The publishable key is public client configuration. The response does not
+include service-role keys, Supabase secret keys, database passwords, or
+dashboard credentials.
+
+## Manual build configuration
+
+To store connection settings in a client build, add the deployment's Backend
+URL and publishable key to the source project before building Nuvio TV, Mobile,
+Desktop, Web, Tizen, or webOS. The build embeds both values, so changing either
+one requires a rebuild and reinstall.
 
 Run this command from the Nuvio Self-Host directory to print the required build
 values:

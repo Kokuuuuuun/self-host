@@ -31,6 +31,9 @@ Nuvio apps use one backend URL for sign-in, synchronization, file storage, and
 supporting functions. A local deployment serves the account dashboard at
 `http://localhost:3000` and the backend at `http://localhost:8000`.
 
+Supported clients fetch public connection settings from
+`/.well-known/nuvio`. The request does not require authentication.
+
 With HTTPS, a browser that opens the public backend URL receives the account
 dashboard. Supabase API paths go to Kong instead. In bundled mode, Nuvio's
 Caddy container terminates HTTPS. In external-proxy mode, the server's existing
