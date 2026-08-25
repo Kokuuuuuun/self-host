@@ -82,6 +82,14 @@ printf '%s' "$home_settings" | jq -e '.[0].settings_json.layout == "smoke"' >/de
 rpc sync_push_profile_settings_blob '{"p_profile_id":1,"p_settings_json":{"theme":"smoke"},"p_platform":"tv","p_origin_client_id":"selfhost-smoke"}' >/dev/null
 profile_settings=$(rpc sync_pull_profile_settings_blob '{"p_profile_id":1,"p_platform":"tv"}')
 printf '%s' "$profile_settings" | jq -e '.[0].settings_json.theme == "smoke"' >/dev/null
+expected_settings_updated_at=$(printf '%s' "$profile_settings" | jq -er '.[0].updated_at')
+guarded_settings_body=$(jq -cn \
+    --arg expected_updated_at "$expected_settings_updated_at" \
+    '{p_profile_id:1,p_settings_json:{theme:"dashboard-smoke"},p_platform:"tv",p_expected_updated_at:$expected_updated_at}')
+guarded_saved_at=$(rpc sync_push_profile_settings_blob_guarded "$guarded_settings_body")
+printf '%s' "$guarded_saved_at" | jq -e 'type == "string" and length > 0' >/dev/null
+profile_settings=$(rpc sync_pull_profile_settings_blob '{"p_profile_id":1,"p_platform":"tv"}')
+printf '%s' "$profile_settings" | jq -e '.[0].settings_json.theme == "dashboard-smoke"' >/dev/null
 echo "OK  settings and collections sync"
 
 rpc sync_push_library '{"p_items":[{"content_id":"tt-smoke-library","content_type":"movie","name":"Smoke Movie","poster":"https://example.com/poster.jpg","poster_shape":"POSTER","background":null,"description":"Synthetic test item","release_info":"2026","imdb_rating":8.0,"genres":["Drama"],"addon_base_url":"https://example.com/addon","added_at":1760000000000}],"p_profile_id":1,"p_origin_client_id":"selfhost-smoke"}' >/dev/null
