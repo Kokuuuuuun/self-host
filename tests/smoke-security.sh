@@ -76,6 +76,7 @@ user_id=$(printf '%s' "$signup" | jq -er '.user.id')
 assert_allowed "$anon_key" health_ping '{}'
 assert_allowed "$anon_key" get_avatar_catalog '{}'
 assert_denied "$anon_key" cleanup_anonymous_users '{}'
+assert_denied "$anon_key" sync_patch_profile '{"p_profile_id":1}'
 assert_denied "$anon_key" sync_export_account_backup '{}'
 
 assert_allowed "$access_token" sync_pull_profiles '{}'

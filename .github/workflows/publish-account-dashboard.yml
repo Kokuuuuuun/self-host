@@ -13,7 +13,7 @@ on:
       website_ref:
         description: Private nuviowebsite branch, tag, or commit to build
         required: false
-        default: master
+        default: 76e8e4f76d348b563aa5851ade856dda94234449
 
 permissions:
   contents: read
@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: tapframe/nuviowebsite
-          ref: ${{ inputs.website_ref || 'master' }}
+          ref: ${{ inputs.website_ref || '76e8e4f76d348b563aa5851ade856dda94234449' }}
           ssh-key: ${{ secrets.NUVIO_WEBSITE_DEPLOY_KEY }}
           persist-credentials: false
           path: website

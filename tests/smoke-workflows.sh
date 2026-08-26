@@ -71,6 +71,29 @@ profiles=$(rpc sync_pull_profiles '{}')
 printf '%s' "$profiles" | jq -e '.[] | select(.profile_index == 1 and .name == "Smoke Profile")' >/dev/null
 echo "OK  profile sync"
 
+standard_avatar_id=$(rpc_anon get_avatar_catalog '{}' | jq -er '.[0].id')
+profile_patch_body=$(jq -cn \
+    --arg avatar_id "$standard_avatar_id" \
+    '{
+        p_profile_id: 1,
+        p_name: "Dashboard Profile",
+        p_avatar_color_hex: "#445566",
+        p_uses_primary_addons: false,
+        p_uses_primary_plugins: false,
+        p_avatar_url: null,
+        p_avatar_url_provided: false,
+        p_avatar_id: $avatar_id,
+        p_avatar_id_provided: true,
+        p_profile_background_id: null,
+        p_profile_background_id_provided: false,
+        p_profile_background_url: null,
+        p_profile_background_url_provided: false
+    }')
+patched_profile=$(rpc sync_patch_profile "$profile_patch_body")
+printf '%s' "$patched_profile" | jq -e --arg avatar_id "$standard_avatar_id" \
+    '.[] | select(.profile_index == 1 and .name == "Dashboard Profile" and .avatar_color_hex == "#445566" and .avatar_id == $avatar_id and .profile_background_id == null and .profile_background_url == null)' >/dev/null
+echo "OK  dashboard profile patch"
+
 rpc sync_push_collections '{"p_profile_id":1,"p_collections_json":[{"id":"smoke-collection","name":"Smoke"}],"p_origin_client_id":"selfhost-smoke"}' >/dev/null
 collections=$(rpc sync_pull_collections '{"p_profile_id":1}')
 printf '%s' "$collections" | jq -e '.[0].collections_json[0].id == "smoke-collection"' >/dev/null
