@@ -12,34 +12,29 @@ x-logging: &default-logging
 services:
 
   caddy:
-  image: caddy:2.10.0-alpine
-  restart: unless-stopped
-  logging: *default-logging
-
-  depends_on:
-    kong:
-      condition: service_started
-    account-dashboard:
-      condition: service_started
-
-  environment:
-    NUVIO_CADDY_CONFIG_VERSION: "discovery-v1"
-    NUVIO_CADDY_ADDRESS: :80
-    ANON_KEY: ${ANON_KEY}
-
-  volumes:
-    - ./volumes/proxy/caddy:/etc/caddy:ro
-    - caddy-data:/data
-    - caddy-config:/config
-
-  expose:
-    - "80"
-
-  networks:
-    default:
-    proxy:
-      aliases:
-        - nuvio-gateway
+    image: caddy:2.10.0-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      kong:
+        condition: service_healthy
+      account-dashboard:
+        condition: service_healthy
+    environment:
+      NUVIO_CADDY_CONFIG_VERSION: "discovery-v1"
+      NUVIO_CADDY_ADDRESS: :80
+      ANON_KEY: ${ANON_KEY}
+    volumes:
+      - ./volumes/proxy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    expose:
+      - "80"
+    networks:
+      default:
+      proxy:
+        aliases:
+          - nuvio-gateway
 
 
   account-dashboard:
@@ -48,7 +43,7 @@ services:
     logging: *default-logging
     depends_on:
       kong:
-        condition: service_started
+        condition: service_healthy
     environment:
       NUVIO_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
       NUVIO_SUPABASE_ANON_KEY: ${ANON_KEY}
@@ -109,8 +104,6 @@ services:
     image: kong/kong:3.9.1
     restart: unless-stopped
     logging: *default-logging
-    healthcheck:
-      disable: true
     ulimits:
       nofile:
         soft: 65535
@@ -119,6 +112,11 @@ services:
       default:
         aliases:
           - api-gw
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - 127.0.0.1:${KONG_HTTP_PORT}:8000/tcp
     volumes:
@@ -501,7 +499,7 @@ services:
       - deno-cache:/root/.cache/deno
     depends_on:
       kong:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/127.0.0.1/9000'"]
       interval: 5s
@@ -554,10 +552,14 @@ services:
       # Use named volume to persist pgsodium decryption key between restarts
       - db-config:/etc/postgresql-custom
     healthcheck:
-      test: ["CMD", "true"]
-      interval: 10s
+      test:
+        [
+        "CMD-SHELL",
+        "pg_isready -U postgres -h localhost && psql -U supabase_admin -d \"$${POSTGRES_DB}\" -Atqc \"select exists(select 1 from nuvio_migrations.schema_migrations where version = '00000000000000')\" | grep -qx t"
+        ]
+      interval: 5s
       timeout: 5s
-      retries: 3
+      retries: 10
     environment:
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: ${POSTGRES_PORT}
