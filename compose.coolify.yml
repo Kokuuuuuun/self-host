@@ -19,7 +19,7 @@ services:
       kong:
         condition: service_started
       account-dashboard:
-        condition: service_started
+        condition: service_healthy
     environment:
       NUVIO_CADDY_CONFIG_VERSION: "discovery-v1"
       NUVIO_CADDY_ADDRESS: :80
@@ -43,7 +43,7 @@ services:
     logging: *default-logging
     depends_on:
       kong:
-        condition: service_healthy
+        condition: service_started
     environment:
       NUVIO_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
       NUVIO_SUPABASE_ANON_KEY: ${ANON_KEY}
@@ -104,6 +104,8 @@ services:
     image: kong/kong:3.9.1
     restart: unless-stopped
     logging: *default-logging
+    healthcheck:
+      disable: true
     ulimits:
       nofile:
         soft: 65535
