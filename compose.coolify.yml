@@ -17,15 +17,15 @@ services:
     logging: *default-logging
     depends_on:
       kong:
-        condition: service_healthy
+        condition: service_started
       account-dashboard:
-        condition: service_healthy
+        condition: service_started
     environment:
       NUVIO_CADDY_CONFIG_VERSION: "discovery-v1"
       NUVIO_CADDY_ADDRESS: :80
       ANON_KEY: ${ANON_KEY}
     volumes:
-      - ./volumes/proxy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./volumes/proxy/caddy:/etc/caddy:ro
       - caddy-data:/data
       - caddy-config:/config
     expose:
@@ -43,7 +43,7 @@ services:
     logging: *default-logging
     depends_on:
       kong:
-        condition: service_healthy
+        condition: service_started
     environment:
       NUVIO_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
       NUVIO_SUPABASE_ANON_KEY: ${ANON_KEY}
@@ -113,10 +113,7 @@ services:
         aliases:
           - api-gw
     healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      disable: true
     ports:
       - 127.0.0.1:${KONG_HTTP_PORT}:8000/tcp
     volumes:
@@ -499,7 +496,7 @@ services:
       - deno-cache:/root/.cache/deno
     depends_on:
       kong:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/127.0.0.1/9000'"]
       interval: 5s
