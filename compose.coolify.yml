@@ -12,29 +12,34 @@ x-logging: &default-logging
 services:
 
   caddy:
-    image: caddy:2.10.0-alpine
-    restart: unless-stopped
-    logging: *default-logging
-    depends_on:
-      kong:
-        condition: service_started
-      account-dashboard:
-        condition: service_healthy
-    environment:
-      NUVIO_CADDY_CONFIG_VERSION: "discovery-v1"
-      NUVIO_CADDY_ADDRESS: :80
-      ANON_KEY: ${ANON_KEY}
-    volumes:
-      - ./volumes/proxy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    expose:
-      - "80"
-    networks:
-      default:
-      proxy:
-        aliases:
-          - nuvio-gateway
+  image: caddy:2.10.0-alpine
+  restart: unless-stopped
+  logging: *default-logging
+
+  depends_on:
+    kong:
+      condition: service_started
+    account-dashboard:
+      condition: service_started
+
+  environment:
+    NUVIO_CADDY_CONFIG_VERSION: "discovery-v1"
+    NUVIO_CADDY_ADDRESS: :80
+    ANON_KEY: ${ANON_KEY}
+
+  volumes:
+    - ./volumes/proxy/caddy:/etc/caddy:ro
+    - caddy-data:/data
+    - caddy-config:/config
+
+  expose:
+    - "80"
+
+  networks:
+    default:
+    proxy:
+      aliases:
+        - nuvio-gateway
 
 
   account-dashboard:
