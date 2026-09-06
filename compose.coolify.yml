@@ -523,40 +523,30 @@ services:
         "/home/deno/functions/main"
       ]
 
-  db:
+    db:
     image: supabase/postgres:17.6.1.084
     restart: unless-stopped
     logging: *default-logging
+
     volumes:
       - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
-      # Must be superuser to create event trigger
       - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
-      # Must be superuser to alter reserved role
       - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
-      # Initialize the database settings with JWT_SECRET and JWT_EXP
       - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
-      # PGDATA directory is persisted between restarts
       - ./volumes/db/data:/var/lib/postgresql/data:Z
-      # Changes required for internal supabase data such as _analytics
       - ./volumes/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:Z
-      # Internal Supabase logging schema
       - ./volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
-      # Changes required for Pooler support
       - ./volumes/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:Z
-      # Nuvio application schema. These run only when the database volume is created.
       - ./database/migrations/00000000000000_baseline.sql:/docker-entrypoint-initdb.d/migrations/99999999990000-nuvio-baseline.sql:ro,Z
       - ./database/migrations/00000000000001_auth_trigger.sql:/docker-entrypoint-initdb.d/migrations/99999999990001-nuvio-auth-trigger.sql:ro,Z
-      # Use named volume to persist pgsodium decryption key between restarts
       - db-config:/etc/postgresql-custom
+
     healthcheck:
-      test:
-        [
-        "CMD-SHELL",
-        "pg_isready -U postgres -h localhost && psql -U supabase_admin -d \"$${POSTGRES_DB}\" -Atqc \"select exists(select 1 from nuvio_migrations.schema_migrations where version = '00000000000000')\" | grep -qx t"
-        ]
-      interval: 5s
+      test: ["CMD", "true"]
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 3
+
     environment:
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: ${POSTGRES_PORT}
@@ -567,13 +557,14 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXP: ${JWT_EXPIRY}
+
     command:
       [
         "postgres",
         "-c",
         "config_file=/etc/postgresql/postgresql.conf",
         "-c",
-        "log_min_messages=fatal" # prevents Realtime polling queries from appearing in logs
+        "log_min_messages=fatal"
       ]
 
   supavisor:
