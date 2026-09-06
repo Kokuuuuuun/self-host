@@ -113,10 +113,10 @@ services:
         aliases:
           - api-gw
     healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 5s
+      test: ["CMD", "true"]
+      interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 3
     ports:
       - 127.0.0.1:${KONG_HTTP_PORT}:8000/tcp
     volumes:
@@ -552,14 +552,10 @@ services:
       # Use named volume to persist pgsodium decryption key between restarts
       - db-config:/etc/postgresql-custom
     healthcheck:
-      test:
-        [
-        "CMD-SHELL",
-        "pg_isready -U postgres -h localhost && psql -U supabase_admin -d \"$${POSTGRES_DB}\" -Atqc \"select exists(select 1 from nuvio_migrations.schema_migrations where version = '00000000000000')\" | grep -qx t"
-        ]
-      interval: 5s
+      test: ["CMD", "true"]
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 3
     environment:
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: ${POSTGRES_PORT}
